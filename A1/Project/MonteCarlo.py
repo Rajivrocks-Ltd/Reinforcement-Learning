@@ -82,7 +82,7 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
 
 def test():
-    n_timesteps = 1000
+    n_timesteps = 10000
     max_episode_length = 100
     eval_interval = 100
     gamma = 1.0
