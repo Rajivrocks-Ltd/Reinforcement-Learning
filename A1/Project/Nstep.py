@@ -20,18 +20,21 @@ class NstepQLearningAgent(BaseAgent):
         done indicates whether the final s in states is was a terminal state """
         # TO DO: Add own code
 
-        T = len(states) - 1  # Total number of time steps in the episode
+        T_ep = len(states)  # Total number of time steps in the episode
 
-        if done:
-            # If the episode is done, the return is the last reward without the bootstrap
-            G = np.sum([self.gamma ** i * rewards[i] for i in range(n)])  # Sum up the entire equation
-        else:
-            # If it's not a terminal state, include the bootstrap step
-            G = np.sum([self.gamma ** i * rewards[i] for i in range(n - 1)])  # Exclude the last reward in the bootstrap
-            G += self.gamma ** (n - 1) * np.max(self.Q_sa[states[T - n + 1]])
+        for t in range(T_ep):
+            m = min(n, T_ep - t)  # m is the number of rewards left to sum
 
-        # Update the Q-value for the first state-action pair in the episode using the absolute difference
-        self.Q_sa[states[0], actions[0]] += self.learning_rate * (G - self.Q_sa[states[0], actions[0]])
+            if done:
+                G_t = np.sum([self.gamma ** i * rewards[t + i] for i in range(m - 1)])  # n-step target without
+                # bootstrap
+            else:
+                G_t = np.sum([self.gamma ** i * rewards[t + i] for i in
+                              range(m - 1)])  # Exclude the last reward in the bootstrap
+                G_t += self.gamma ** m * np.max(self.Q_sa[states[t + m], :])
+
+            # Update the Q-value for the current state-action pair in the episode using the absolute difference
+            self.Q_sa[states[t], actions[t]] += self.learning_rate * (G_t - self.Q_sa[states[t], actions[t]])
 
 
 def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,

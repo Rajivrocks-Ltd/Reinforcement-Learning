@@ -83,5 +83,5 @@ def test():
     print(eval_returns, eval_timesteps)
 
 
-R N R R N N R N Nif __name__ == '__main__':
+if __name__ == '__main__':
     test()
