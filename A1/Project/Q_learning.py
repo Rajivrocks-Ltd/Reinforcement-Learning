@@ -16,10 +16,12 @@ class QLearningAgent(BaseAgent):
     def update(self, s, a, r, s_next, done):
         # TO DO: Add own code
         if done:
-            self.Q_sa[s, a] = r
+            g = r
         else:
             g = r + self.gamma * np.max(self.Q_sa[s_next])
-            self.Q_sa[s, a] += self.learning_rate * (g - self.Q_sa[s, a])
+
+        current = self.Q_sa[s, a]
+        self.Q_sa[s, a] = current + self.learning_rate * (g - self.Q_sa[s, a])
 
 
 def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=None, plot=True,
@@ -33,27 +35,26 @@ def q_learning(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None
     eval_timesteps = []
     eval_returns = []
 
+    i = 0
+    s = env.reset()
     # TO DO: Write your Q-learning algorithm here!
-    for t in range(n_timesteps):
-        s = env.reset()
-        total_reward = 0
+    while i <= n_timesteps:
 
-        while True:
-            a = agent.select_action(s, policy, epsilon, temp)
-            s_next, r, done = env.step(a)
-            total_reward += r
-            agent.update(s, a, r, s_next, done)
+        a = agent.select_action(s, policy, epsilon, temp)
+        s_next, r, done = env.step(a)
+        agent.update(s, a, r, s_next, done)
 
-            if done:
-                # env.reset()  # Reset environment if s' is terminal
-                break
-            else:
-                s = s_next  # Transition to the next state
+        if done:
+            s = env.reset()  # Reset environment if s' is terminal
+        else:
+            s = s_next  # Transition to the next state
 
-        if t % eval_interval == 0:
+        if i % eval_interval == 0:
             eval_return = agent.evaluate(eval_env)
-            eval_timesteps.append(t)
+            eval_timesteps.append(i)
             eval_returns.append(eval_return)
+
+        i += 1
 
     if plot:
         env.render(Q_sa=agent.Q_sa, plot_optimal_policy=True, step_pause=0.1)  # Plot the Q-value estimates during

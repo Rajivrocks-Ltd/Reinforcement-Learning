@@ -44,9 +44,9 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
     # TO DO: Write your Monte Carlo RL algorithm here!
 
-    for t in range(n_timesteps):
+    i = 0
+    while i <= n_timesteps:
         s = env.reset()
-        total_reward = 0
         states = [s]
         actions = []
         rewards = []
@@ -60,19 +60,20 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
             actions.append(a)
             rewards.append(r)
 
-            total_reward += r
-
             if done:
                 break
             else:
                 s = s_next
 
+            if i % eval_interval == 0:
+                eval_return = pi.evaluate(eval_env)
+                eval_timesteps.append(i)
+                eval_returns.append(eval_return)
+
+            i += 1
+
         pi.update(states, actions, rewards)
 
-        if t % eval_interval == 0:
-            eval_return = pi.evaluate(eval_env)
-            eval_timesteps.append(t)
-            eval_returns.append(eval_return)
 
     if plot:
         env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True, step_pause=0.1)  # Plot the Q-value estimates during Monte
@@ -82,7 +83,7 @@ def monte_carlo(n_timesteps, max_episode_length, learning_rate, gamma,
 
 
 def test():
-    n_timesteps = 10000
+    n_timesteps = 1000
     max_episode_length = 100
     eval_interval = 100
     gamma = 1.0

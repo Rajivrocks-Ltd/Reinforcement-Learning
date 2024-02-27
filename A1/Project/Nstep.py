@@ -33,17 +33,17 @@ class NstepQLearningAgent(BaseAgent):
         # # Update the Q-value for the first state-action pair in the episode using the absolute difference
         # self.Q_sa[states[0], actions[0]] += self.learning_rate * (G - self.Q_sa[states[0], actions[0]])
 
-        T_ep = len(states) - 1 # Total number of time steps in the episode
+        T_ep = len(states) - 1  # Total number of time steps in the episode
 
         for t in range(T_ep):
             m = min(n, T_ep - t)  # m is the number of rewards left to sum
 
-            if done:
-                G_t = np.sum([self.gamma ** i * rewards[t + i] for i in range(m - 1)])  # n-step target without
+            if done and (m + t) == T_ep:
+                G_t = np.sum([self.gamma ** i * rewards[t + i] for i in range(m)])  # n-step target without
                 # bootstrap
             else:
                 G_t = np.sum([self.gamma ** i * rewards[t + i] for i in
-                              range(m - 1)])  # Exclude the last reward in the bootstrap
+                              range(m)])  # Exclude the last reward in the bootstrap
                 G_t += self.gamma ** m * np.max(self.Q_sa[states[t + m], :])
 
             # Update the Q-value for the current state-action pair in the episode using the absolute difference
@@ -65,9 +65,9 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
     # rows, cols = pi.Q_sa.shape
     # pi.Q_sa = np.zeros((rows, cols))
 
-    for t in range(n_timesteps):
+    i = 0
+    while i <= n_timesteps:
         s = env.reset()
-        total_reward = 0
         states = [s]
         actions = []
         rewards = []
@@ -81,19 +81,19 @@ def n_step_Q(n_timesteps, max_episode_length, learning_rate, gamma,
             actions.append(a)
             rewards.append(r)
 
-            total_reward += r
-
             if done:
                 break
             else:
                 s = s_next
 
-        pi.update(states, actions, rewards, done, n)
+            if i % eval_interval == 0:
+                eval_return = pi.evaluate(eval_env)
+                eval_timesteps.append(i)
+                eval_returns.append(eval_return)
 
-        if t % eval_interval == 0:
-            eval_return = pi.evaluate(eval_env)
-            eval_timesteps.append(t)
-            eval_returns.append(eval_return)
+            i += 1
+
+        pi.update(states, actions, rewards, done, n)
 
     if plot:
         env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True, step_pause=0.1)  # Plot the Q-value estimates during n-step

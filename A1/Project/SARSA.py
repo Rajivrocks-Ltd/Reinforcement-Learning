@@ -16,10 +16,12 @@ class SarsaAgent(BaseAgent):
     def update(self, s, a, r, s_next, a_next, done):
         # TO DO: Add own code
         if done:
-            self.Q_sa[s, a] = r
+            g = r
         else:
             g = r + self.gamma * self.Q_sa[s_next, a_next]
-            self.Q_sa[s, a] += self.learning_rate * (g - self.Q_sa[s, a])
+
+        current = self.Q_sa[s, a]
+        self.Q_sa[s, a] = current + self.learning_rate * (g - self.Q_sa[s, a])
 
 
 def sarsa(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, temp=None, plot=True, eval_interval=500):
@@ -32,31 +34,29 @@ def sarsa(n_timesteps, learning_rate, gamma, policy='egreedy', epsilon=None, tem
     eval_timesteps = []
     eval_returns = []
 
+    i = 0
+    s = env.reset()
+    a = pi.select_action(s, policy, epsilon, temp)
     # TO DO: Write your SARSA algorithm here!
-    for t in range(n_timesteps):
-        s = env.reset()
-        a = pi.select_action(s, policy, epsilon, temp)
+    while i <= n_timesteps:
 
-        total_reward = 0
+        s_next, r, done = env.step(a)
+        a_next = pi.select_action(s_next, policy, epsilon, temp)
+        pi.update(s, a, r, s_next, a_next, done)
 
-        while True:
-            s_next, r, done = env.step(a)
-            a_next = pi.select_action(s_next, policy, epsilon, temp)
-            pi.update(s, a, r, s_next, a_next, done)
-
-            total_reward += r
-
-            if done:
-                break
-
+        if done:
+            s = env.reset()
+        else:
             s = s_next
             a = a_next
 
         # Evaluation at regular intervals
-        if t % eval_interval == 0:
+        if i % eval_interval == 0:
             eval_return = pi.evaluate(eval_env)
-            eval_timesteps.append(t)
+            eval_timesteps.append(i)
             eval_returns.append(eval_return)
+
+        i += 1
 
     if plot:
         env.render(Q_sa=pi.Q_sa, plot_optimal_policy=True,
